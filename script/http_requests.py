@@ -1,14 +1,18 @@
 import logging
 import requests
+import sys
 
 HTTPSTAT_URL = "https://httpstat.us"
 
 
 def setup_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s"
-    )
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    root_logger.addHandler(handler)
+    
 
 def check_status_codes(status_codes):
     for code in status_codes:

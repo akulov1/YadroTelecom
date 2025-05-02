@@ -1,0 +1,56 @@
+---
+- name: Сборка Docker-образа и запуск контейнера с проверкой
+  hosts: all
+  become: true
+
+  vars:
+    image_name: http-check
+    container_name: http-check-container
+
+  tasks:
+    - name: Копирование Dockerfile на целевой хост
+      copy:
+        src: "../docker/Dockerfile"
+        dest: /tmp/Dockerfile
+
+    - name: Копирование скрипта на целевой хост
+      copy:
+        src: "../script/http_requests.py"
+        dest: /tmp/http_requests.py
+
+    - name: Сборка Docker-образа
+      community.docker.docker_image:
+        name: "{{ image_name }}"
+        build:
+          path: /tmp
+        source: build
+
+    - name: Запуск контейнера и проверка кода возврата
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        state: started
+        detach: false
+      register: run_result
+
+    - name: Получить код возврата контейнера
+      command: docker wait {{ container_name }}
+      register: container_exit_code
+      changed_when: false
+
+    - name: Проверка, что контейнер завершился с кодом 0
+      assert:
+        that:
+          - container_exit_code.stdout|int == 0
+        fail_msg: "Скрипт завершился с кодом {{ container_exit_code.stdout }}, ожидается 0"
+        success_msg: "Скрипт успешно отработал (код возврата 0)"
+
+    - name: Получение логов контейнера
+      command: docker logs {{ container_name }}
+      register: container_logs
+      changed_when: false
+      failed_when: false
+
+    - name: Вывод логов контейнера
+      debug:
+        msg: "{{ container_logs.stdout_lines }}"
