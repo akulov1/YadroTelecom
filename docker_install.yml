@@ -1,0 +1,50 @@
+---
+- name: Установка Docker на хосте
+  hosts: local
+  become: true
+
+  tasks:
+    - name: Установка зависимостей для Docker
+      apt:
+        name: 
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+        state: present
+        update_cache: true
+
+    - name: Добавление официального GPG-ключа Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Добавление репозитория Docker
+      apt_repository: 
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
+        state: present
+
+    - name: Установка Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Добавление пользователя {{ ansible_user_id }} в группу docker
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: docker
+        append: true
+
+    - name: Запуск и включениеслужбы Docker
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Проверка версии Docker
+      command: docker --version
+      register: docker_version
+
+    - name: Показать версию Docker
+      debug:
+        msg: "{{ docker_version.stdout }}"
