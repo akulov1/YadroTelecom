@@ -4,7 +4,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends python3 python3-pip && \
     rm -rf /var/lib/apt/lists/*
 
-COPY http_requests.py /app/http_requests.py
+COPY ../script/http_requests.py /app/http_requests.py
 
 RUN pip3 install requests
 
